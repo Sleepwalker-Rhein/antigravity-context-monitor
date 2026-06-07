@@ -1,6 +1,8 @@
 # Antigravity Context Monitor 🌌
 > A lightweight, event-driven context length & token overflow monitor for LLM Agentic Coding tools (such as Antigravity and Gemini client). Prevents reasoning degradation in long chat sessions with 0-token overhead.
 
+![Preview](assets/context_monitor_preview.png)
+
 [English](#english) | [中文说明](#中文说明)
 
 ---
