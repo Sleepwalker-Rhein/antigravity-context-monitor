@@ -157,7 +157,7 @@ function analyzeLogFile(filePath) {
 
     console.log(`[${new Date().toLocaleTimeString()}] [Watcher] Rounds: ${userInputCount} | Compressed: ${hasCompression}`);
 
-    if (userInputCount >= 20) {
+    if (userInputCount >= 24) {
       if (!state.redTriggered) {
         showNotification(t.redTitle, t.redMsg(userInputCount));
         state.redTriggered = true;
