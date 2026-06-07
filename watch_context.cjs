@@ -15,11 +15,11 @@ server.once('error', (err) => {
 server.listen(PORT);
 
 const brainPath = path.join(os.homedir(), '.gemini', 'antigravity', 'brain');
+// Dynamically determine language based on OS system locale
+const systemLocale = Intl.DateTimeFormat().resolvedOptions().locale;
+const isZh = systemLocale.startsWith('zh');
 
-// Dynamically determine the target project workspace:
-// 1. Command line argument: node watch_context.cjs "C:/path/to/project"
-// 2. Default to parent directory of this script (assuming it sits in a subfolder like 'scratch')
-// 3. Fallback to current working directory
+// Dynamically determine the target project workspace
 const targetArg = process.argv[2];
 const projectWorkspace = targetArg 
   ? path.resolve(targetArg) 
@@ -37,6 +37,27 @@ let state = {
   redTriggered: false,
   compressionTriggered: false
 };
+
+const translations = {
+  zh: {
+    yellowTitle: '🟡 Antigravity 会话过长',
+    yellowMsg: (rounds) => `当前对话已达 ${rounds} 轮。上下文体积增加，AI 推理及规划精度可能下降。`,
+    redTitle: '🔴 Antigravity 上下文警告',
+    redMsg: (rounds) => `当前对话已达 ${rounds} 轮。AI 记忆精度严重下降，建议开启新对话！`,
+    compTitle: '🟡 Antigravity 记忆已压缩',
+    compMsg: '检测到历史会话已被自动压缩。部分前期细节与代码片段已丢失！'
+  },
+  en: {
+    yellowTitle: '🟡 Antigravity Chat Getting Long',
+    yellowMsg: (rounds) => `Current chat has reached ${rounds} rounds. Increased context size may degrade AI reasoning accuracy.`,
+    redTitle: '🔴 Antigravity Context Warning',
+    redMsg: (rounds) => `Current chat has reached ${rounds} rounds. AI memory accuracy is significantly degraded; starting a new chat is highly recommended!`,
+    compTitle: '🟡 Antigravity Memory Compressed',
+    compMsg: 'Conversation history has been compressed automatically. Early details and code snippets are now lost!'
+  }
+};
+
+const t = isZh ? translations.zh : translations.en;
 
 function escapeXml(unsafe) {
   return unsafe.replace(/[<>&'"]/g, (c) => {
@@ -136,17 +157,17 @@ function analyzeLogFile(filePath) {
 
     if (userInputCount >= 20) {
       if (!state.redTriggered) {
-        showNotification('🔴 Antigravity 上下文警告', `当前对话已达 ${userInputCount} 轮。AI 记忆精度严重下降，建议开启新对话！`);
+        showNotification(t.redTitle, t.redMsg(userInputCount));
         state.redTriggered = true;
       }
     } else if (hasCompression) {
       if (!state.compressionTriggered) {
-        showNotification('🟡 Antigravity 记忆已压缩', `检测到历史会话已被自动压缩。部分前期细节与代码片段已丢失！`);
+        showNotification(t.compTitle, t.compMsg);
         state.compressionTriggered = true;
       }
     } else if (userInputCount >= 12) {
       if (!state.yellowTriggered) {
-        showNotification('🟡 Antigravity 会话过长', `当前对话已达 ${userInputCount} 轮。上下文体积增加，AI 推理精度可能下降。`);
+        showNotification(t.yellowTitle, t.yellowMsg(userInputCount));
         state.yellowTriggered = true;
       }
     }
@@ -215,6 +236,6 @@ setInterval(startWatching, 30000);
 
 startWatching();
 console.log('====================================================');
-console.log('Antigravity Context Watcher Running...');
+console.log(`Antigravity Context Watcher Running [Locale: ${systemLocale}]`);
 console.log(`Target Project Path: ${projectWorkspace}`);
 console.log('====================================================');
