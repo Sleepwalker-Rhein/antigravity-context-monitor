@@ -15,11 +15,9 @@ server.once('error', (err) => {
 server.listen(PORT);
 
 const brainPath = path.join(os.homedir(), '.gemini', 'antigravity', 'brain');
-// Dynamically determine language based on OS system locale
 const systemLocale = Intl.DateTimeFormat().resolvedOptions().locale;
 const isZh = systemLocale.startsWith('zh');
 
-// Dynamically determine the target project workspace
 const targetArg = process.argv[2];
 const projectWorkspace = targetArg 
   ? path.resolve(targetArg) 
@@ -76,12 +74,16 @@ function showNotification(title, message) {
   const escapedMessage = escapeXml(message);
   const appId = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe';
   
+  // 核心修复：替换为通过程序集动态反射加载的 Toast 发送逻辑，杜绝 RPC 报错
   const psCommand = `
-    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType=WindowsRuntime] | Out-Null;
-    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument;
+    $xmlType = [System.Type]::GetType('Windows.Data.Xml.Dom.XmlDocument, Windows, ContentType=WindowsRuntime');
+    $toastType = [System.Type]::GetType('Windows.UI.Notifications.ToastNotification, Windows, ContentType=WindowsRuntime');
+    $managerType = [System.Type]::GetType('Windows.UI.Notifications.ToastNotificationManager, Windows, ContentType=WindowsRuntime');
+    $xml = [Activator]::CreateInstance($xmlType);
     $xml.LoadXml('<toast activationType=''none''><visual><binding template=''ToastGeneric''><text>${escapedTitle}</text><text>${escapedMessage}</text></binding></visual></toast>');
-    $toast = New-Object Windows.UI.Notifications.ToastNotification $xml;
-    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('${appId}').Show($toast);
+    $toast = [Activator]::CreateInstance($toastType, $xml);
+    $notifier = $managerType::CreateToastNotifier('${appId}');
+    $notifier.Show($toast);
   `.replace(/\r?\n/g, ' ').trim();
   
   exec(`powershell -Command "${psCommand}"`, (error, stdout, stderr) => {
