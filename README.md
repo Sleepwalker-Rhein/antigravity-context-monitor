@@ -2,6 +2,8 @@
 
 A lightweight, zero-dependency, event-driven context length monitor designed for the Antigravity 2.0 Agentic Coding client. It runs completely outside the AI's context window, consuming **0 tokens / 0 AI attention** to prevent AI reasoning degradation in long chats.
 
+![Preview](assets/context_monitor_preview.png)
+
 ---
 
 ## 🌟 Features
